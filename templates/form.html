@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block content %}
+<form method="post" class="space-y-6">
+    {{ form.hidden_tag() }}
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <input class="border p-2 rounded" name="name" placeholder="Full Name" required>
+    <input class="border p-2 rounded" name="title" placeholder="Headline (e.g., IT Specialist)">
+    <input class="border p-2 rounded" name="email" placeholder="Email" required>
+    <input class="border p-2 rounded" name="phone" placeholder="Phone">
+    <input class="border p-2 rounded" name="location" placeholder="City, State">
+    <input class="border p-2 rounded" name="links" placeholder="Links (comma separated)">
+  </div>
+
+  <textarea class="border p-2 rounded w-full" name="summary" rows="4" placeholder="3–4 line summary"></textarea>
+  <input class="border p-2 rounded w-full" name="skills" placeholder="Skills (comma separated)">
+
+  <h2 class="text-xl font-semibold">Experience</h2>
+  {% for i in range(0,3) %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border rounded p-3">
+    <input class="border p-2 rounded" name="experiences-{{i}}-title" placeholder="Job Title">
+    <input class="border p-2 rounded" name="experiences-{{i}}-company" placeholder="Company">
+    <input class="border p-2 rounded" name="experiences-{{i}}-location" placeholder="Location">
+    <div class="grid grid-cols-2 gap-2">
+      <input class="border p-2 rounded" name="experiences-{{i}}-start" placeholder="Start (e.g., Jan 2023)">
+      <input class="border p-2 rounded" name="experiences-{{i}}-end" placeholder="End (e.g., Present)">
+    </div>
+    <textarea class="border p-2 rounded md:col-span-2" name="experiences-{{i}}-bullets" rows="4" placeholder="Achievements — one per line"></textarea>
+  </div>
+  {% endfor %}
+
+  <h2 class="text-xl font-semibold">Projects</h2>
+  {% for i in range(0,2) %}
+  <div class="grid grid-cols-1 gap-4 border rounded p-3">
+    <input class="border p-2 rounded" name="projects-{{i}}-name" placeholder="Project Name">
+    <textarea class="border p-2 rounded" name="projects-{{i}}-description" rows="2" placeholder="Impact + tech (one line)"></textarea>
+  </div>
+  {% endfor %}
+
+  <h2 class="text-xl font-semibold">Education</h2>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border rounded p-3">
+    <input class="border p-2 rounded" name="education-0-school" placeholder="School">
+    <input class="border p-2 rounded" name="education-0-degree" placeholder="Degree">
+    <input class="border p-2 rounded" name="education-0-grad" placeholder="Graduation">
+  </div>
+
+  <div class="flex items-center gap-4">
+    <label class="inline-flex items-center gap-2 text-sm">
+      <input type="checkbox" name="include_projects" checked> Include Projects
+    </label>
+    <label class="inline-flex items-center gap-2 text-sm">
+      <input type="checkbox" name="include_education" checked> Include Education
+    </label>
+  </div>
+
+  <button class="px-4 py-2 rounded bg-slate-900 text-white">Generate .docx</button>
+</form>
+{% endblock %}
