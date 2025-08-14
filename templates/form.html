@@ -1,58 +1,140 @@
-{% extends 'base.html' %}
-{% block content %}
-<form method="post" class="space-y-6">
-    {{ form.hidden_tag() }}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ResumeUnicorn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Generate ATS-Friendly Resume</h1>
+    <p class="lede">Fill the form carefully. We validate on the client and again on the server for safety.</p>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <input class="border p-2 rounded" name="name" placeholder="Full Name" required>
-    <input class="border p-2 rounded" name="title" placeholder="Headline (e.g., IT Specialist)">
-    <input class="border p-2 rounded" name="email" placeholder="Email" required>
-    <input class="border p-2 rounded" name="phone" placeholder="Phone">
-    <input class="border p-2 rounded" name="location" placeholder="City, State">
-    <input class="border p-2 rounded" name="links" placeholder="Links (comma separated)">
-  </div>
+    {% if form.errors %}
+      <div class="errorlist">
+        <strong>Please fix the following:</strong>
+        <ul>
+          {% for field, errs in form.errors.items() %}
+            {% for e in errs %}<li>{{ field }}: {{ e }}</li>{% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
 
-  <textarea class="border p-2 rounded w-full" name="summary" rows="4" placeholder="3–4 line summary"></textarea>
-  <input class="border p-2 rounded w-full" name="skills" placeholder="Skills (comma separated)">
+    <div class="form">
+      <form method="post" novalidate data-enhanced="1">
+        {{ form.hidden_tag() }}
+        <input type="text" name="hp" autocomplete="off" tabindex="-1" style="position:absolute;left:-5000px;opacity:0" aria-hidden="true">
 
-  <h2 class="text-xl font-semibold">Experience</h2>
-  {% for i in range(0,3) %}
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border rounded p-3">
-    <input class="border p-2 rounded" name="experiences-{{i}}-title" placeholder="Job Title">
-    <input class="border p-2 rounded" name="experiences-{{i}}-company" placeholder="Company">
-    <input class="border p-2 rounded" name="experiences-{{i}}-location" placeholder="Location">
-    <div class="grid grid-cols-2 gap-2">
-      <input class="border p-2 rounded" name="experiences-{{i}}-start" placeholder="Start (e.g., Jan 2023)">
-      <input class="border p-2 rounded" name="experiences-{{i}}-end" placeholder="End (e.g., Present)">
+        <!-- Contact -->
+        <div class="row"><label for="name">Name</label>
+          {{ form.name(id="name", placeholder="e.g., Jane Doe", maxlength="80", required=True,
+                       pattern="[A-Za-z][A-Za-z\\s\\.'\\-]{1,79}") }}
+          <div class="hint">Use letters, spaces, period, apostrophe, hyphen.</div>
+        </div>
+
+        <div class="row"><label for="email">Email</label>
+          {{ form.email(id="email", placeholder="you@example.com", maxlength="120", required=True, inputmode="email") }}
+        </div>
+
+        <div class="row"><label for="phone">Phone <span class="hint">(optional)</span></label>
+          {{ form.phone(id="phone", placeholder="+1 (555) 123-4567", maxlength="20", inputmode="tel",
+                        pattern="[0-9+\\-()\\s]{7,20}") }}
+        </div>
+
+        <div class="row"><label for="location">Location (City, State/Region, Country) <span class="hint">(optional)</span></label>
+          {{ form.location(id="location", placeholder="San Diego, CA, USA", maxlength="120") }}
+        </div>
+
+        <!-- Role -->
+        <div class="row"><label for="role">Target Role</label>
+          {{ form.role(id="role", placeholder="e.g., Senior Data Engineer", maxlength="100", required=True) }}
+        </div>
+
+        <div class="row"><label for="linkedin">LinkedIn URL <span class="hint">(optional; linkedin.com only)</span></label>
+          {{ form.linkedin(id="linkedin", placeholder="https://www.linkedin.com/in/your-handle", maxlength="200", inputmode="url") }}
+        </div>
+
+        <div class="row"><label for="years">Years of Experience <span class="hint">(optional)</span></label>
+          {{ form.years(id="years", placeholder="e.g., 6", min="0", max="60") }}
+        </div>
+
+        <div class="row"><label for="skills">Top Skills (comma-separated) <span class="hint">(optional)</span></label>
+          {{ form.skills(id="skills", placeholder="Python, SQL, Airflow, dbt", maxlength="200") }}
+        </div>
+
+        <!-- Preferences -->
+        <div class="row"><label for="work_mode">Preferred Work Mode <span class="hint">(optional)</span></label>
+          {{ form.work_mode(id="work_mode") }}
+        </div>
+
+        <div class="row">
+          <label for="relocation">Relocation <span class="hint">(optional)</span></label>
+          {{ form.relocation(id="relocation") }} <span class="hint">Open to relocation</span>
+        </div>
+
+        <div class="row"><label for="authorization">Work Authorization (US) <span class="hint">(optional)</span></label>
+          {{ form.authorization(id="authorization") }}
+        </div>
+
+        <!-- Education -->
+        <div class="row"><label for="highest_degree">Highest Degree <span class="hint">(optional)</span></label>
+          {{ form.highest_degree(id="highest_degree") }}
+        </div>
+
+        <div class="row"><label for="school">School <span class="hint">(optional)</span></label>
+          {{ form.school(id="school", maxlength="120") }}
+        </div>
+
+        <div class="row"><label for="grad_year">Graduation Year <span class="hint">(optional)</span></label>
+          {{ form.grad_year(id="grad_year", min="1950", max="2100", placeholder="e.g., 2022") }}
+        </div>
+
+        <!-- Links -->
+        <div class="row"><label for="portfolio">Portfolio Website <span class="hint">(optional)</span></label>
+          {{ form.portfolio(id="portfolio", placeholder="https://your.site", maxlength="200", inputmode="url") }}
+        </div>
+
+        <div class="row"><label for="github">GitHub URL <span class="hint">(optional; github.com only)</span></label>
+          {{ form.github(id="github", placeholder="https://github.com/you", maxlength="200", inputmode="url") }}
+        </div>
+
+        <!-- Narrative -->
+        <div class="row">
+          <label for="summary">Summary (max 500 chars)</label>
+          <span class="counter" id="summary-count"></span>
+          {{ form.summary(id="summary", maxlength="500", placeholder="One tight paragraph highlighting impact and scope.") }}
+        </div>
+
+        <div class="row">
+          <label for="achievements">Key Achievements (max 600 chars) <span class="hint">(optional)</span></label>
+          <span class="counter" id="achievements-count"></span>
+          {{ form.achievements(id="achievements", maxlength="600",
+                               placeholder="e.g., Reduced ETL cost 30% by migrating to serverless...") }}
+        </div>
+
+        <div class="row">
+          <label for="certifications">Certifications (max 300 chars) <span class="hint">(optional)</span></label>
+          <span class="counter" id="certifications-count"></span>
+          {{ form.certifications(id="certifications", maxlength="300",
+                                 placeholder="AWS SAA, PMP, Google Data Analytics...") }}
+        </div>
+
+        <div class="row">
+          <label for="languages">Languages (comma-separated) <span class="hint">(optional)</span></label>
+          {{ form.languages(id="languages", maxlength="200", placeholder="English, Spanish") }}
+        </div>
+
+        <div class="actions">
+          <button type="submit">Generate</button>
+        </div>
+      </form>
     </div>
-    <textarea class="border p-2 rounded md:col-span-2" name="experiences-{{i}}-bullets" rows="4" placeholder="Achievements — one per line"></textarea>
-  </div>
-  {% endfor %}
 
-  <h2 class="text-xl font-semibold">Projects</h2>
-  {% for i in range(0,2) %}
-  <div class="grid grid-cols-1 gap-4 border rounded p-3">
-    <input class="border p-2 rounded" name="projects-{{i}}-name" placeholder="Project Name">
-    <textarea class="border p-2 rounded" name="projects-{{i}}-description" rows="2" placeholder="Impact + tech (one line)"></textarea>
-  </div>
-  {% endfor %}
-
-  <h2 class="text-xl font-semibold">Education</h2>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border rounded p-3">
-    <input class="border p-2 rounded" name="education-0-school" placeholder="School">
-    <input class="border p-2 rounded" name="education-0-degree" placeholder="Degree">
-    <input class="border p-2 rounded" name="education-0-grad" placeholder="Graduation">
+    <p class="hint">All inputs are normalized and sanitized server-side. Max request size is <small class="code">256KB</small>.</p>
   </div>
 
-  <div class="flex items-center gap-4">
-    <label class="inline-flex items-center gap-2 text-sm">
-      <input type="checkbox" name="include_projects" checked> Include Projects
-    </label>
-    <label class="inline-flex items-center gap-2 text-sm">
-      <input type="checkbox" name="include_education" checked> Include Education
-    </label>
-  </div>
-
-  <button class="px-4 py-2 rounded bg-slate-900 text-white">Generate .docx</button>
-</form>
-{% endblock %}
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>

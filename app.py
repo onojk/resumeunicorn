@@ -1,126 +1,91 @@
-from flask import Flask, render_template, request, send_file, flash
-from wtforms import Form, StringField, TextAreaField, FieldList, FormField, BooleanField
-from wtforms.validators import DataRequired, Email, Length, Optional
 import os
-from generators.docx_builder import build_docx
-import io, json
+from flask import Flask, render_template, abort
+from flask_wtf.csrf import CSRFError
+from werkzeug.exceptions import RequestEntityTooLarge
+from flask import request
+from flask_wtf.csrf import CSRFError
+from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_wtf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+from forms import ResumeRequestForm
+from utils import clean_text
 
 app = Flask(__name__)
-from flask_wtf import CSRFProtect, FlaskForm
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+app.config.update(
+    SECRET_KEY=os.environ.get("SECRET_KEY", "change-me"),
+    MAX_CONTENT_LENGTH=256 * 1024,   # 256 KB
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    WTF_CSRF_TIME_LIMIT=None,
+)
+
 CSRFProtect(app)
-app.secret_key = os.environ.get("FLASK_SECRET", "dev-insecure")
-from flask_wtf import CSRFProtect, FlaskForm
-CSRFProtect(app)
-app.secret_key = os.environ.get("FLASK_SECRET", "dev-insecure")
-
-# ---- subforms
-class ExperienceForm(Form):
-    class Meta:
-        csrf = False
-    title = StringField("Job Title", validators=[Optional(), Length(max=120)])
-    company = StringField("Company", validators=[Optional(), Length(max=120)])
-    location = StringField("Location", validators=[Optional(), Length(max=120)])
-    start = StringField("Start (e.g., Jan 2023)", validators=[Optional(), Length(max=40)])
-    end = StringField("End (e.g., Present)", validators=[Optional(), Length(max=40)])
-    bullets = TextAreaField("Achievements (one per line)", validators=[Optional(), Length(max=4000)])
-
-class EducationForm(Form):
-    class Meta:
-        csrf = False
-    school = StringField("School", validators=[Optional(), Length(max=120)])
-    degree = StringField("Degree (e.g., B.S. in CS)", validators=[Optional(), Length(max=120)])
-    grad = StringField("Graduation (e.g., 2024)", validators=[Optional(), Length(max=40)])
-
-class ProjectForm(Form):
-    class Meta:
-        csrf = False
-    name = StringField("Project Name", validators=[Optional(), Length(max=120)])
-    description = TextAreaField("Impact/Tech (one line)", validators=[Optional(), Length(max=1000)])
-
-class ResumeForm(FlaskForm):
-    name = StringField("Full Name", validators=[DataRequired(), Length(max=120)])
-    title = StringField("Headline", validators=[Optional(), Length(max=120)])
-    email = StringField("Email", validators=[DataRequired(), Email(), Length(max=120)])
-    phone = StringField("Phone", validators=[Optional(), Length(max=40)])
-    location = StringField("City, State", validators=[Optional(), Length(max=80)])
-    links = StringField("Links (comma separated)", validators=[Optional(), Length(max=400)])
-    summary = TextAreaField("Professional Summary (3–4 lines)", validators=[Optional(), Length(max=1000)])
-    skills = TextAreaField("Skills (comma separated)", validators=[Optional(), Length(max=1000)])
-    experiences = FieldList(FormField(ExperienceForm), min_entries=3, max_entries=10)
-    education = FieldList(FormField(EducationForm), min_entries=1, max_entries=5)
-    projects = FieldList(FormField(ProjectForm), min_entries=2, max_entries=10)
-    include_projects = BooleanField("Include Projects", default=True)
-    include_education = BooleanField("Include Education", default=True)
-
-def _csv(s):  # helpers
-    return [x.strip() for x in (s or "").split(",") if x.strip()]
-
-def _lines(s):
-    return [x.strip() for x in (s or "").splitlines() if x.strip()]
-
-def normalize(form: ResumeForm):
-    data = {
-        "name": (form.name.data or "").strip(),
-        "title": (form.title.data or "").strip(),
-        "email": (form.email.data or "").strip(),
-        "phone": (form.phone.data or "").strip(),
-        "location": (form.location.data or "").strip(),
-        "links": _csv(form.links.data),
-        "summary": (form.summary.data or "").strip(),
-        "skills": _csv(form.skills.data),
-        "experience": [],
-        "education": [],
-        "projects": [],
-        "options": {
-            "include_projects": bool(form.include_projects.data),
-            "include_education": bool(form.include_education.data),
-        },
-    }
-    for e in form.experiences.entries:
-        if any([e.form.title.data, e.form.company.data, e.form.bullets.data]):
-            data["experience"].append({
-                "title": (e.form.title.data or "").strip(),
-                "company": (e.form.company.data or "").strip(),
-                "location": (e.form.location.data or "").strip(),
-                "start": (e.form.start.data or "").strip(),
-                "end": (e.form.end.data or "").strip(),
-                "bullets": _lines(e.form.bullets.data),
-            })
-    for ed in form.education.entries:
-        if any([ed.form.school.data, ed.form.degree.data]):
-            data["education"].append({
-                "school": (ed.form.school.data or "").strip(),
-                "degree": (ed.form.degree.data or "").strip(),
-                "grad": (ed.form.grad.data or "").strip(),
-            })
-    for p in form.projects.entries:
-        if any([p.form.name.data, p.form.description.data]):
-            data["projects"].append({
-                "name": (p.form.name.data or "").strip(),
-                "description": (p.form.description.data or "").strip(),
-            })
-    return data
+limiter = Limiter(key_func=get_remote_address, app=app, default_limits=["20/minute", "200/hour"], storage_uri=os.environ.get("LIMITER_STORAGE_URI", "redis://127.0.0.1:6379/0"))
 
 @app.route("/", methods=["GET", "POST"])
+@limiter.limit("5/minute; 40/hour")
 def index():
-    form = ResumeForm(request.form)
-    if request.method == "POST" and form.validate():
-        data = normalize(form)
-        _ = io.BytesIO(json.dumps(data).encode("utf-8"))  # keep if you later want to save alongside
-        docx_bytes = build_docx(data)
-        return send_file(
-            docx_bytes,
-            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            as_attachment=True,
-            download_name=f"{data['name'].replace(' ', '_')}_Resume.docx",
-        )
-    elif request.method == "POST":
-        flash("Please correct errors and try again.", "error")
-    return render_template("form.html", form=form)
+    form = ResumeRequestForm()
+    if form.validate_on_submit():
+        # basic honeypot: bots fill this hidden field; humans do not
+
+        if request.form.get("hp"):
+
+            abort(400, description="Invalid input.")
+
+
+
+        linkedin = clean_text(form.linkedin.data or "", 200)
+
+        years    = form.years.data if form.years.data is not None else ""
+
+        skills   = clean_text(form.skills.data or "", 200)
+
+        name    = clean_text(form.name.data,    80)
+        email   = clean_text(form.email.data,   120)
+        role    = clean_text(form.role.data,    100)
+        summary = clean_text(form.summary.data, 500)
+
+        if not name or not role or "@" not in email:
+            abort(400, description="Invalid input.")
+
+        # TODO: your generation logic here
+        return render_template("success.html", name=name)
+
+    return render_template("form.html", form=form), (400 if form.errors else 200)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="127.0.0.1", port=8001, debug=False)
 
-@app.get("/healthz")
-def healthz():
-    return {"ok": True}, 200
+from flask import jsonify
+from flask_wtf.csrf import CSRFError
+from werkzeug.exceptions import RequestEntityTooLarge
+
+@limiter.exempt
+
+# --- healthz (clean single definition) ---
+@limiter.exempt
+@app.route("/healthz", endpoint="healthz")
+def healthcheck():
+    return jsonify(status="ok"), 200
+# --- end healthz ---
+
+@app.errorhandler(RequestEntityTooLarge)
+
+def handle_413(e):
+
+    return "Request too large", 413
+
+
+@app.errorhandler(CSRFError)
+def handle_csrf(e):
+    ct = (request.mimetype or "")
+    if request.method == "POST" and ct.startswith("application/json"):
+        return "Unsupported Media Type", 415
+    return (getattr(e, "description", "Bad Request")), 400
