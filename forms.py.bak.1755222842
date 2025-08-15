@@ -1,0 +1,48 @@
+cat > forms.py <<'PY'
+from flask_wtf import FlaskForm
+from wtforms import StringField, TextAreaField, RadioField
+from wtforms.validators import DataRequired, Length, Email, Optional, Regexp, ValidationError, AnyOf
+from urllib.parse import urlparse
+
+ROLE_RE = r'^[A-Za-z0-9 ,./&()+#\-]{2,100}$'
+
+def must_be_linkedin(form, field):
+    if not field.data:
+        return
+    u = urlparse(field.data)
+    host = (u.hostname or '').lower()
+    if not (host.endswith('linkedin.com') or host.endswith('linkedin.cn')):
+        raise ValidationError('Must be a linkedin.com URL')
+
+def must_be_github(form, field):
+    if not field.data:
+        return
+    u = urlparse(field.data)
+    host = (u.hostname or '').lower()
+    if not host.endswith('github.com'):
+        raise ValidationError('Must be a github.com URL')
+
+class ResumeRequestForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    role = StringField('Target Role', validators=[DataRequired(), Regexp(ROLE_RE)])
+    linkedin = StringField('LinkedIn', validators=[Optional(), must_be_linkedin])
+    github = StringField('GitHub', validators=[Optional(), must_be_github])
+    skills = TextAreaField('Skills', validators=[Optional(), Length(max=2000)])
+    summary = TextAreaField('Summary', validators=[Optional(), Length(max=2000)])
+
+    # ✅ Add missing field expected by templates/form.html:69
+    work_mode = RadioField(
+        'Work mode',
+        choices=[('onsite','On-site'), ('hybrid','Hybrid'), ('remote','Remote')],
+        validators=[Optional(), AnyOf(['onsite','hybrid','remote'])]
+    )
+
+    # ✅ Ensure “emerald” is a valid choice since you post theme=emerald
+    theme = RadioField(
+        'Theme',
+        choices=[('emerald','Emerald'), ('sapphire','Sapphire'), ('slate','Slate'), ('rose','Rose')],
+        default='emerald',
+        validators=[DataRequired(), AnyOf(['emerald','sapphire','slate','rose'])]
+    )
+PY

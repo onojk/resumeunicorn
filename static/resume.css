@@ -1,0 +1,6 @@
+body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color:#0f172a; margin:2rem; }
+h1 { margin:0; font-size:2rem; }
+h2 { font-size:1.1rem; margin-top:1.5rem; letter-spacing:.02em; }
+.muted { color:#475569; }
+.rule { border-top:1px solid #e2e8f0; margin:.75rem 0 1rem; }
+.bul { margin:.35rem 0 .35rem 1rem; }

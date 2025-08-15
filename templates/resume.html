@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ data.name }} — Resume</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='resume.css') }}">
+</head>
+<body class="theme-{{ data.theme|default('sapphire') }}">
+  <div class="resume">
+    <div class="card">
+      <header class="header">
+        <h1 class="name">{{ data.name }}</h1>
+        <p class="tagline">{{ data.tagline or data.role }}</p>
+      </header>
+
+      <div class="meta">
+        {{ data.location or '' }}{% if data.location and (data.email or data.phone) %} • {% endif %}
+        {{ data.email or '' }}{% if data.email and data.phone %} • {% endif %}
+        {{ data.phone or '' }}{% if data.linkedin or data.github or data.portfolio %} • {% endif %}
+        {% if data.linkedin %}<a href="{{ data.linkedin }}">{{ data.linkedin }}</a>{% endif %}
+        {% if data.github %} • <a href="{{ data.github }}">{{ data.github }}</a>{% endif %}
+        {% if data.portfolio %} • <a href="{{ data.portfolio }}">{{ data.portfolio }}</a>{% endif %}
+      </div>
+
+      {% if data.summary %}
+      <section class="section">
+        <div class="h">Professional Summary</div>
+        <div class="rule"></div>
+        <p class="lead">{{ data.summary }}</p>
+      </section>
+      {% endif %}
+
+      {% if data.skills_list %}
+      <section class="section">
+        <div class="h">Core Skills</div>
+        <div class="rule"></div>
+        <div class="skills">
+          {% for s in data.skills_list %}<span>{{ s }}</span>{% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if data.education and (data.education.school or data.education.degree or data.education.when) %}
+      <section class="section edu">
+        <div class="h">Education</div>
+        <div class="rule"></div>
+        <div class="school">{{ data.education.school }}</div>
+        <div>{{ data.education.degree }}</div>
+        {% if data.education.when %}<div class="small">{{ data.education.when }}</div>{% endif %}
+      </section>
+      {% endif %}
+
+      <div class="actions">
+        <a class="btn" href="{{ url_for('download_pdf') }}">Download PDF</a>
+        <a class="btn ghost" href="{{ url_for('download_docx') }}">Download DOCX</a>
+        <a class="btn ghost" href="{{ url_for('index') }}">Back</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

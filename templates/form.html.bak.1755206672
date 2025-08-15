@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ResumeUnicorn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Generate ATS-Friendly Resume</h1>
+    <p class="lede">Fill the form carefully. We validate on the client and again on the server for safety.</p>
+
+    {% if form.errors %}
+      <div class="errorlist">
+        <strong>Please fix the following:</strong>
+        <ul>
+          {% for field, errs in form.errors.items() %}
+            {% for e in errs %}<li>{{ field }}: {{ e }}</li>{% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <div class="form">
+      <form method="post" novalidate data-enhanced="1">
+        {{ form.hidden_tag() }}
+        <!-- honeypot -->
+        <input type="text" name="hp" autocomplete="off" tabindex="-1" style="position:absolute;left:-5000px;opacity:0" aria-hidden="true">
+
+        <div class="row">
+          <label for="name">Name</label>
+          {{ form.name(id="name", placeholder="e.g., Jane Doe",
+                       maxlength="80", required=True,
+                       pattern="[A-Za-z][A-Za-z\\s\\.'\\-]{1,79}") }}
+          <div class="hint">Use letters, spaces, period, apostrophe, hyphen.</div>
+        </div>
+
+        <div class="row">
+          <label for="email">Email</label>
+          {{ form.email(id="email", placeholder="you@example.com",
+                        maxlength="120", required=True, inputmode="email") }}
+        </div>
+
+        <div class="row">
+          <label for="role">Target Role</label>
+          {{ form.role(id="role", placeholder="e.g., Senior Data Engineer",
+                       maxlength="100", required=True) }}
+        </div>
+
+        <div class="row">
+          <label for="linkedin">LinkedIn URL <span class="hint">(optional)</span></label>
+          {{ form.linkedin(id="linkedin", placeholder="https://www.linkedin.com/in/your-handle", maxlength="200", inputmode="url") }}
+        </div>
+
+        <div class="row">
+          <label for="years">Years of Experience <span class="hint">(optional)</span></label>
+          {{ form.years(id="years", placeholder="e.g., 6", min="0", max="60") }}
+        </div>
+
+        <div class="row">
+          <label for="skills">Top Skills (comma-separated) <span class="hint">(optional)</span></label>
+          {{ form.skills(id="skills", placeholder="Python, SQL, Airflow, dbt", maxlength="200") }}
+        </div>
+
+        <div class="row">
+          <label for="summary">Summary (max 500 chars)</label>
+          <span class="counter" id="summary-count"></span>
+          {{ form.summary(id="summary", maxlength="500", placeholder="One tight paragraph highlighting impact and scope.") }}
+        </div>
+
+        <div class="actions">
+          <button type="submit">Generate</button>
+        </div>
+      </form>
+    </div>
+
+    <p class="hint">All inputs are normalized and sanitized server-side. Max request size is <small class="code">256KB</small>.</p>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ name or 'Resume' }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <style>
+    /* print tweaks (still CSP-safe) */
+    body { background:#fff; color:#111; }
+    .page { max-width:800px; margin:24px auto; padding:0 16px; }
+    h1 { font-size:28px; margin:0 0 8px; }
+    .muted { color:#555; margin:0 0 12px; }
+    h2 { font-size:18px; margin:18px 0 6px; }
+    ul { margin:6px 0 12px 18px; }
+    @page { margin: 16mm; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>{{ name }}</h1>
+    <p class="muted">
+      {% set bits = [] %}
+      {% if role %}{% set _ = bits.append(role) %}{% endif %}
+      {% if location %}{% set _ = bits.append(location) %}{% endif %}
+      {% if years %}{% set _ = bits.append(years ~ ' yrs exp') %}{% endif %}
+      {{ bits|join(' · ') }}
+    </p>
+
+    {% if summary %}
+      <h2>Summary</h2>
+      <p>{{ summary }}</p>
+    {% endif %}
+
+    {% if skills %}
+      <h2>Skills</h2>
+      <p>{{ skills|join(', ') }}</p>
+    {% endif %}
+
+    {% if certs %}
+      <h2>Certifications</h2>
+      <p>{{ certs|join(', ') }}</p>
+    {% endif %}
+
+    {% if languages %}
+      <h2>Languages</h2>
+      <p>{{ languages|join(', ') }}</p>
+    {% endif %}
+
+    {% if linkedin or github or portfolio or email or phone %}
+      <h2>Links & Contact</h2>
+      <ul>
+        {% if email %}<li>Email: {{ email }}</li>{% endif %}
+        {% if phone %}<li>Phone: {{ phone }}</li>{% endif %}
+        {% if linkedin %}<li>LinkedIn: {{ linkedin }}</li>{% endif %}
+        {% if github %}<li>GitHub: {{ github }}</li>{% endif %}
+        {% if portfolio %}<li>Portfolio: {{ portfolio }}</li>{% endif %}
+      </ul>
+    {% endif %}
+  </div>
+</body>
+</html>

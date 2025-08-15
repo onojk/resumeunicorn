@@ -23,7 +23,7 @@
     {% endif %}
 
     <div class="form">
-      <form method="post" novalidate data-enhanced="1">
+      <form method="POST" action="{{ url_for('index') }}" enctype="application/x-www-form-urlencoded">
         {{ form.hidden_tag() }}
         <input type="text" name="hp" autocomplete="off" tabindex="-1" style="position:absolute;left:-5000px;opacity:0" aria-hidden="true">
 

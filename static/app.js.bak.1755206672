@@ -1,0 +1,26 @@
+(function(){
+  const form = document.querySelector('form[data-enhanced="1"]');
+  if(!form) return;
+  const summary = document.getElementById('summary');
+  const counter = document.getElementById('summary-count');
+  const btn = form.querySelector('button[type="submit"]');
+  const MAX = parseInt(summary?.getAttribute('maxlength')||'500',10);
+
+  function updateCount(){
+    if(!summary||!counter) return;
+    const left = MAX - (summary.value || '').length;
+    counter.textContent = left + ' remaining';
+  }
+  updateCount();
+  summary?.addEventListener('input', updateCount);
+
+  // Prevent accidental double submit
+  form.addEventListener('submit', function(e){
+    if(!form.checkValidity()){
+      // Let browser show native messages
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Working…';
+  });
+})();

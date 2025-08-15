@@ -1,34 +1,41 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>ResumeUnicorn – Success</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <meta charset="utf-8" />
+  <title>All set • ResumeUnicorn</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color:#0f172a; background:#fff; margin:2rem; }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    h1 { margin: 0 0 .5rem 0; font-size: 1.8rem; }
+    .lede { color:#334155; margin:.25rem 0 1rem; }
+    .alert { background:#fff7ed; border:1px solid #fdba74; color:#7c2d12; padding:.75rem 1rem; border-radius:.5rem; }
+    .actions { display:flex; gap:.5rem; flex-wrap:wrap; margin:1rem 0 1.25rem; }
+    .btn { display:inline-block; padding:.55rem .9rem; border-radius:.5rem; border:1px solid #cbd5e1; text-decoration:none; }
+    .btn:hover { background:#f1f5f9; }
+  </style>
 </head>
 <body>
-  <div class="container">
+  <main class="wrap">
     <h1>All set 🎉</h1>
-    <div class="success">
-  <p class="actions" style="margin-top:16px">
-    <a href="/static/downloads/sample-resume.docx">Download DOCX</a> | 
-    <a href="/static/downloads/sample-resume.pdf">Download PDF</a>
-  </p>
-      Thanks, <strong>{{ name }}</strong> — your request was received.
-  <p class="actions" style="margin-top:16px">
-    <a href="/static/downloads/sample-resume.docx">Download DOCX</a> | 
-    <a href="/static/downloads/sample-resume.pdf">Download PDF</a>
-  </p>
-    </div>
-  <p class="actions" style="margin-top:16px">
-    <a href="/static/downloads/sample-resume.docx">Download DOCX</a> | 
-    <a href="/static/downloads/sample-resume.pdf">Download PDF</a>
-  </p>
-    <p class="hint" style="margin-top:12px">
-      Download: <a href="{{ url_for('download_resume', fmt='pdf') }}">PDF</a> ·
-      <a href="{{ url_for('download_resume', fmt='docx') }}">DOCX</a>
-    </p>
-    <p class="hint"><a href="{{ url_for('index') }}">Go back</a></p>
-  </div>
+
+    {% if not session.get('resume_data') %}
+      <p class="lede">We saved your details for this session. Preview or download your resume below.</p>
+      <div class="alert">
+        We couldn’t find a resume in your session. Please
+        <a href="{{ url_for('index') }}">go back and submit the form</a> again.
+      </div>
+    {% else %}
+      <p class="lede">We saved your details for this session. Preview or download your resume below.</p>
+      <div class="actions">
+        <a class="btn" href="{{ url_for('resume_preview') }}">Preview</a>
+        <a class="btn" href="{{ url_for('resume_pdf') }}">Download PDF</a>
+        <a class="btn" href="{{ url_for('resume_jpg') }}">Download JPG</a>
+        <a class="btn" href="{{ url_for('resume_docx') }}">Download DOCX</a>
+      </div>
+    {% endif %}
+
+    <p><a href="{{ url_for('index') }}">— Make changes</a></p>
+  </main>
 </body>
 </html>
