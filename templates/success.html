@@ -10,8 +10,24 @@
   <div class="container">
     <h1>All set 🎉</h1>
     <div class="success">
+  <p class="actions" style="margin-top:16px">
+    <a href="/static/downloads/sample-resume.docx">Download DOCX</a> | 
+    <a href="/static/downloads/sample-resume.pdf">Download PDF</a>
+  </p>
       Thanks, <strong>{{ name }}</strong> — your request was received.
+  <p class="actions" style="margin-top:16px">
+    <a href="/static/downloads/sample-resume.docx">Download DOCX</a> | 
+    <a href="/static/downloads/sample-resume.pdf">Download PDF</a>
+  </p>
     </div>
+  <p class="actions" style="margin-top:16px">
+    <a href="/static/downloads/sample-resume.docx">Download DOCX</a> | 
+    <a href="/static/downloads/sample-resume.pdf">Download PDF</a>
+  </p>
+    <p class="hint" style="margin-top:12px">
+      Download: <a href="{{ url_for('download_resume', fmt='pdf') }}">PDF</a> ·
+      <a href="{{ url_for('download_resume', fmt='docx') }}">DOCX</a>
+    </p>
     <p class="hint"><a href="{{ url_for('index') }}">Go back</a></p>
   </div>
 </body>
