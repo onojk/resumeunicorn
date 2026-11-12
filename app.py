@@ -117,6 +117,18 @@ app.config.update(
 
 CSRFProtect(app)
 
+
+def canonical_url() -> str:
+    """Self-referencing canonical URL: always https + apex, path only (no query)."""
+    from urllib.parse import quote
+    path = quote(request.path, safe="/!$&'()*+,;=:@~-._") if request else "/"
+    return f"https://{CANONICAL_HOST}{path}"
+
+
+@app.context_processor
+def inject_canonical():
+    return {"canonical_url": canonical_url()}
+
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
@@ -183,6 +195,7 @@ def render_resume_html(data: dict) -> str:
 <head>
 <meta charset="utf-8">
 <title>{name} — Resume</title>
+<link rel="canonical" href="{escape(canonical_url())}">
 <link rel="stylesheet" href="{request.url_root.rstrip('/')}/static/resume.css">
 </head>
 <body>
