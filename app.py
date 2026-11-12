@@ -58,8 +58,51 @@ from forms import ResumeRequestForm
 # -----------------------------------------------------------------------------
 # App setup
 # -----------------------------------------------------------------------------
+CANONICAL_HOST = "resumeunicorn.com"
+WWW_HOST = "www." + CANONICAL_HOST
+
+
+class WwwToApexRedirect:
+    """Redirect www.resumeunicorn.com -> https://resumeunicorn.com, keeping path + query.
+
+    Both hosts are Cloud Run domain mappings to this one service, so the
+    redirect has to live in the app. It runs as outermost WSGI middleware so
+    it fires before CSRF, rate limiting and ProxyFix, and it checks the real
+    Host header (not a client-supplied X-Forwarded-Host). The target host is
+    fixed, so this can't be turned into an open redirect.
+    """
+
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        host = environ.get("HTTP_HOST", "").split(":", 1)[0].strip().lower().rstrip(".")
+        if host != WWW_HOST:
+            return self.wsgi_app(environ, start_response)
+
+        from urllib.parse import quote
+        path = environ.get("SCRIPT_NAME", "") + environ.get("PATH_INFO", "")
+        # PATH_INFO is percent-decoded and latin-1 encoded per PEP 3333; re-encode it.
+        path = quote(path.encode("latin-1"), safe="/!$&'()*+,;=:@~-._") or "/"
+        location = f"https://{CANONICAL_HOST}{path}"
+        qs = environ.get("QUERY_STRING", "")
+        if qs:
+            location += "?" + qs
+
+        # 301 for GET/HEAD as requested; 308 for other methods so POST bodies survive.
+        method = environ.get("REQUEST_METHOD", "GET").upper()
+        status = "301 Moved Permanently" if method in ("GET", "HEAD") else "308 Permanent Redirect"
+        start_response(status, [
+            ("Location", location),
+            ("Content-Type", "text/plain; charset=utf-8"),
+            ("Content-Length", "0"),
+            ("Cache-Control", "public, max-age=86400"),
+        ])
+        return [b""]
+
+
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+app.wsgi_app = WwwToApexRedirect(ProxyFix(app.wsgi_app, x_proto=1, x_host=1))
 
 app.config.update(
     SECRET_KEY=os.environ.get("SECRET_KEY", "change-me"),
