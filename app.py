@@ -220,6 +220,39 @@ def render_resume_html(data: dict) -> str:
 def healthz():
     return jsonify(status="ok"), 200
 
+# Public, indexable pages. /success and /resume are per-session views, so
+# they stay out of the sitemap.
+SITEMAP_PATHS = ["/"]
+
+@app.get("/robots.txt")
+@limiter.exempt
+def robots_txt():
+    body = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "\n"
+        f"Sitemap: https://{CANONICAL_HOST}/sitemap.xml\n"
+    )
+    resp = make_response(body)
+    resp.mimetype = "text/plain"
+    return resp
+
+@app.get("/sitemap.xml")
+@limiter.exempt
+def sitemap_xml():
+    urls = "".join(
+        f"  <url><loc>https://{CANONICAL_HOST}{p}</loc></url>\n" for p in SITEMAP_PATHS
+    )
+    body = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{urls}"
+        "</urlset>\n"
+    )
+    resp = make_response(body)
+    resp.mimetype = "application/xml"
+    return resp
+
 @app.route("/", methods=["GET", "POST"])
 @limiter.limit("10/minute; 200/hour")
 def index():
